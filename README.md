@@ -61,5 +61,5 @@ Examples:
 
     .. To import a JSON file created with this CLI and
     save it as an image:
-        > -ij ./my.json -oi > -oi ./my.png
+        > -ij ./my.json -oi ./my.png
 ```
