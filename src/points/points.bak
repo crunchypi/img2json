@@ -1,0 +1,71 @@
+package points
+
+import (
+	_ "bufio"
+	"image"
+	"image/color"
+	"image/png"
+	"os"
+)
+
+type PX struct {
+	R uint8
+	G uint8
+	B uint8
+	A uint8
+}
+
+type Points struct {
+	Data [][]PX
+	Rect image.Rectangle
+}
+
+func NewFromImageFile(path string) (*Points, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	data, _, err := image.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+
+	res := Points{}
+	res.Rect = data.Bounds()
+	// Copy over all data points.
+	res.Data = make([][]PX, res.Rect.Max.X)
+	for x := 0; x < res.Rect.Max.X; x++ {
+		row := make([]PX, res.Rect.Max.Y)
+		for y := 0; y < res.Rect.Max.Y; y++ {
+			r, g, b, a := data.At(x, y).RGBA()
+			row[y] = PX{uint8(r), uint8(g), uint8(b), uint8(a)}
+		}
+		res.Data[x] = row
+	}
+	return &res, nil
+}
+
+func (p *Points) ToRGBA() *image.RGBA {
+	res := image.NewRGBA(p.Rect)
+	for x := 0; x < p.Rect.Max.X; x++ {
+		for y := 0; y < p.Rect.Max.Y; y++ {
+			px := p.Data[x][y]
+			c := color.RGBA{px.R, px.G, px.B, px.A}
+			res.SetRGBA(x, y, c)
+		}
+	}
+	return res
+}
+
+func (p *Points) SaveAsImage(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	err = png.Encode(f, p.ToRGBA())
+	return err
+}
